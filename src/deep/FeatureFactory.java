@@ -71,6 +71,7 @@ public class FeatureFactory {
 			}
 		}
 		allVecs=new SimpleMatrix(vecData);
+		
 		if (allVecs!=null) return allVecs;
 		return null;
 		//TODO implement this
@@ -85,8 +86,8 @@ public class FeatureFactory {
 		int count=0;
 		BufferedReader in = new BufferedReader(new FileReader(vocabFilename));
 		for (String line = in.readLine(); line != null; line = in.readLine()) {
-			wordToNum.put(line, count);
-			numToWord.put(count, line);
+			wordToNum.put(line.toLowerCase(), count);
+			numToWord.put(count, line.toLowerCase());
 			count++;
 		}
 		return wordToNum;

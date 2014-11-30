@@ -3,6 +3,7 @@ package deep;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import org.ejml.simple.SimpleMatrix;
@@ -20,20 +21,21 @@ public class Baseline {
 		List<Datum> trainData = FeatureFactory.readTrainData("data/train");
 		List<Datum> testData = FeatureFactory.readTestData("data/dev");
 		HashMap<String,String> wordToTag=new HashMap<String,String>();
+		HashSet<String> duplicates=new HashSet<String>();
 		for (Datum d:trainData) {
+			if (duplicates.contains(d.word)) continue;
 			if (!wordToTag.containsKey(d.word))
 				wordToTag.put(d.word, d.label);
-			else if (!d.label.equals("O"))
-				wordToTag.put(d.word, d.label);
+			else {
+				wordToTag.remove(d.word);
+				duplicates.add(d.word);
+			}
 				
 		}
 		
 		for (Datum d:testData) {
 			if (wordToTag.containsKey(d.word)) {
 				sb.append(String.format("%s	%s	%s\n",d.word,d.label,wordToTag.get(d.word)));
-			}
-			else {
-				sb.append(String.format("%s	%s	O\n",d.word,d.label));
 			}
 			
 		}
