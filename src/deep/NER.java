@@ -26,11 +26,12 @@ public class NER {
 	FeatureFactory.initializeVocab("data/vocab.txt");
 	allVecs= FeatureFactory.readWordVectors("data/wordVectors.txt");
 	// initialize model 
-	WindowModel model = new WindowModel(3, 2,0.001);
+	WindowModel model = new WindowModel(3,50,0.001);
 	model.initWeights();
 
 	//TODO: Implement those two functions
+	
 	model.train(trainData);
-	//model.test(testData);
+	model.test(testData);
     }
 }
