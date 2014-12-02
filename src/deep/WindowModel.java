@@ -86,7 +86,6 @@ public class WindowModel {
 				if (data.get(i).label.equals("ORG")) label[i]=3;
 				if (data.get(i).label.equals("PER")) label[i]=4;
 			}
-			score=0;
 			System.out.println(step);
 			for (int count=0;count<data.size();count++) {
 				String word=data.get(count).word.toLowerCase();
@@ -156,8 +155,12 @@ public class WindowModel {
 		StringBuilder sb=new StringBuilder();
 		for (int count=0;count<testData.size();count++) {
 			String word=testData.get(count).word.toLowerCase();
+			String originalword=testData.get(count).word;
 			int y=label[count];
-			if (word.equals("-docstart-")) continue;
+			if (word.equals("-docstart-")) {
+				sb.append(String.format("%s	%s	%s\n",testData.get(count).word,testData.get(count).label,"O"));
+				continue;
+			}
 			int[] num=new int[3];
 			L=extractL(testData,count,num);
 			SimpleMatrix z=W.mult(L).plus(b1);//z,h*1
@@ -169,13 +172,26 @@ public class WindowModel {
 			for (int i=0;i<5;i++) sum+=Math.exp(q.get(i,0));
 			SimpleMatrix p=new SimpleMatrix(5,1);//p,5*1
 			for (int i=0;i<5;i++) p.set(i,0,Math.exp(q.get(i,0))/sum);
-			System.out.println(p);
+			//System.out.println(p);
 			double max=0;int category=-1;
 			for (int i=0;i<5;i++) {
 				if (p.get(i,0)>max) {
 					max=p.get(i,0);
 					category=i;
 				}
+			}
+			if (word.equals(originalword))
+				category=0;
+			if ((category==0)&&(originalword.length()>1)&&(Character.isUpperCase(originalword.charAt(0)))&&(!Character.isUpperCase(originalword.charAt(1)))) {
+				if ((!Character.isLetter(testData.get(count-1).word.charAt(0)))&&(!Character.isDigit(testData.get(count-1).word.charAt(0))))
+					continue;
+				max=0;category=-1;
+				for (int i=1;i<5;i++) {
+					if (p.get(i,0)>max) {
+						max=p.get(i,0);
+						category=i;
+					}
+				}	
 			}
 			sb.append(String.format("%s	%s	%s\n",testData.get(count).word,testData.get(count).label,cat[category]));
 		}
