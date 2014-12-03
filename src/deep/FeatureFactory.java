@@ -28,13 +28,12 @@ public class FeatureFactory {
 	static List<Datum> testData;
 	/** Do not modify this method **/
 	public static List<Datum> readTestData(String filename) throws IOException {
-        if (testData==null) testData= read(filename);
+        testData= read(filename);
         return testData;
 	}
 	
 	private static List<Datum> read(String filename)
 			throws FileNotFoundException, IOException {
-	    // TODO: you'd want to handle sentence boundaries
 		List<Datum> data = new ArrayList<Datum>();
 		BufferedReader in = new BufferedReader(new FileReader(filename));
 		for (String line = in.readLine(); line != null; line = in.readLine()) {

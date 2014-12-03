@@ -24,6 +24,7 @@ public class Baseline {
 		List<Datum> testData = FeatureFactory.readTestData("data/test");
 		HashMap<String,HashMap<String,Integer>> wordToTag=new HashMap<String,HashMap<String,Integer>>();
 		for (Datum d:trainData) {
+			System.out.println(d.word);
 			if (!wordToTag.containsKey(d.word)) {
 				HashMap<String,Integer> temp=new HashMap<String,Integer>();
 				temp.put(d.label, 1);

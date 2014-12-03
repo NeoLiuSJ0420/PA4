@@ -19,7 +19,7 @@ public class NER {
 
 	// this reads in the train and test datasets
 	List<Datum> trainData = FeatureFactory.readTrainData("data/train");
-	List<Datum> testData = FeatureFactory.readTestData("data/dev");
+	
 	
 	//	read the train and test data
 	//TODO: Implement this function (just reads in vocab and word vectors)
@@ -32,6 +32,11 @@ public class NER {
 	//TODO: Implement those two functions
 	
 	model.train(trainData);
-	model.test(testData);
+	List<Datum> testData_train = FeatureFactory.readTestData("data/train");
+	model.test(testData_train,"train");
+	List<Datum> testData_dev = FeatureFactory.readTestData("data/dev");
+	model.test(testData_dev,"dev");
+	List<Datum> testData_test = FeatureFactory.readTestData("data/test");
+	model.test(testData_test,"test");
     }
 }

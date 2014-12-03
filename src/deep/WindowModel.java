@@ -17,13 +17,18 @@ public class WindowModel {
 	public int windowSize,wordSize, hiddenSize;
 	public double learningRate;
 	public double lamda=0.0001;
-	public int epoch=10;
+	public int epoch=15;
 	public String[] cat={"O","LOC","MISC","ORG","PER"};
+	public String[] days={"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday","January","February","March","April","May","June","July","August","September","October","November","December"};
+	public HashSet<String> specialStrings;
 
 	public WindowModel(int _windowSize, int _hiddenSize, double _lr){
 		windowSize=_windowSize;
 		hiddenSize=_hiddenSize;
 		learningRate=_lr;
+		specialStrings=new HashSet<String>();
+		for (String str:days)
+			specialStrings.add(str);
 	}
 
 	/**
@@ -46,14 +51,14 @@ public class WindowModel {
 		else num[1]=FeatureFactory.wordToNum.get(word);
 		
 		
-		if ((count==Data.size()-1)||(Data.get(count+1).word.toLowerCase().equals("-docstart-"))) 
+		if ((count==Data.size()-1)||(Data.get(count+1).word.toLowerCase().equals("-docstart-")||(word.equals("."))))
 			num[2]=31;
 		else if (!FeatureFactory.wordToNum.containsKey(Data.get(count+1).word.toLowerCase()))
 			num[2]=0;
 		else
 			num[2]=FeatureFactory.wordToNum.get(Data.get(count+1).word.toLowerCase());
 		
-		if ((count==0)||(Data.get(count-1).word.toLowerCase().equals("-docstart-"))) 
+		if ((count==0)||(Data.get(count-1).word.toLowerCase().equals("-docstart-"))||(Data.get(count-1).word.toLowerCase().equals("."))) 
 			num[0]=30;
 		else if (!FeatureFactory.wordToNum.containsKey(Data.get(count-1).word.toLowerCase()))
 			num[0]=0;
@@ -143,7 +148,8 @@ public class WindowModel {
 		dL=W.transpose().mult(delta1);
 	}
 
-	public void test(List<Datum> testData) throws IOException{
+	public void test(List<Datum> testData,String data) throws IOException{
+		PrintWriter writer = new PrintWriter(data+"_windowmodel.out", "UTF-8");
 		int[] label=new int[testData.size()];
 		for (int i=0;i<testData.size();i++) {
 			if (testData.get(i).label.equals("O")) label[i]=0;
@@ -152,13 +158,13 @@ public class WindowModel {
 			if (testData.get(i).label.equals("ORG")) label[i]=3;
 			if (testData.get(i).label.equals("PER")) label[i]=4;
 		}
-		StringBuilder sb=new StringBuilder();
+
 		for (int count=0;count<testData.size();count++) {
 			String word=testData.get(count).word.toLowerCase();
 			String originalword=testData.get(count).word;
 			int y=label[count];
 			if (word.equals("-docstart-")) {
-				sb.append(String.format("%s	%s	%s\n",testData.get(count).word,testData.get(count).label,"O"));
+				writer.print(String.format("%s	%s	%s\n",testData.get(count).word,testData.get(count).label,"O"));
 				continue;
 			}
 			int[] num=new int[3];
@@ -185,6 +191,8 @@ public class WindowModel {
 			if ((category==0)&&(originalword.length()>1)&&(Character.isUpperCase(originalword.charAt(0)))&&(!Character.isUpperCase(originalword.charAt(1)))) {
 				if ((!Character.isLetter(testData.get(count-1).word.charAt(0)))&&(!Character.isDigit(testData.get(count-1).word.charAt(0))))
 					continue;
+				if (specialStrings.contains(originalword))
+					continue;
 				max=0;category=-1;
 				for (int i=1;i<5;i++) {
 					if (p.get(i,0)>max) {
@@ -193,10 +201,9 @@ public class WindowModel {
 					}
 				}	
 			}
-			sb.append(String.format("%s	%s	%s\n",testData.get(count).word,testData.get(count).label,cat[category]));
+			writer.print(String.format("%s	%s	%s\n",testData.get(count).word,testData.get(count).label,cat[category]));
 		}
-		PrintWriter writer = new PrintWriter("windowmodel.out", "UTF-8");
-		writer.print(sb);
+		
 		writer.close();
 		System.out.println("finish");
 	}
