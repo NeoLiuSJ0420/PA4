@@ -41,6 +41,88 @@ public class WindowModel {
 		U=SimpleMatrix.random(5,hiddenSize,(-1)*init,init, new Random());
 		b2=new SimpleMatrix(5,1);
 	}
+        public double forwardProp(SimpleMatrix y) {
+           SimpleMatrix z=W.mult(L).plus(b1);//z,h*1
+	   SimpleMatrix a=new SimpleMatrix(z);//a,h*1
+	   for (int i=0;i<hiddenSize;i++)
+		a.set(i,0,Math.tanh(a.get(i,0)));
+	   SimpleMatrix q=U.mult(a).plus(b2);//q,5*1
+	   double sum=0;
+	   for (int i=0;i<5;i++) sum+=Math.exp(q.get(i,0));
+	   SimpleMatrix p=new SimpleMatrix(5,1);//p,5*1
+           for (int i=0;i<5;i++) p.set(i,0,Math.exp(q.get(i,0))/sum);
+           double J = 0;
+           for(int i=0;i<5;i++) J+=Math.log(p.get(i,0)) * y.get(i,0);
+           J = J*-1;
+           return J;
+       }
+        public void doGradCheck(SimpleMatrix y){
+          double eps = 1e-4;
+          double diff = 0.0;
+          double t;
+          double J_plus, J_minus,grad,graddiff;
+          for(int i = 0; i<L.getNumElements(); i++){
+            t = L.get(i);
+            L.set(i,t+eps);
+            J_plus = forwardProp(y);
+            L.set(i,t-eps);
+            J_minus = forwardProp(y);
+            grad = (J_plus-J_minus) / (2*eps);
+            graddiff = Math.abs(dL.get(i) - grad);
+           // System.out.println("dL="+dL.get(i)+"  numgrad="+grad);
+            diff += graddiff*graddiff;
+            L.set(i,t);
+          }
+          for(int i = 0; i< W.getNumElements();i++){
+            t = W.get(i);
+            W.set(i,t+eps);
+            J_plus = forwardProp(y);
+            W.set(i,t-eps);
+            J_minus = forwardProp(y);
+            grad = (J_plus-J_minus) /(2*eps);
+            graddiff = Math.abs(dW.get(i)-grad);
+            System.out.println("dW="+dW.get(i)+"  numgrad="+grad);
+            diff += graddiff*graddiff;
+            W.set(i,t);
+         } 
+         for(int i = 0; i < U.getNumElements();i++){
+           t = U.get(i);
+           U.set(i,t+eps);
+           J_plus = forwardProp(y);
+           U.set(i,t-eps);
+           J_minus = forwardProp(y);
+           grad = (J_plus - J_minus)/(2*eps);
+           graddiff = Math.abs(dU.get(i) -grad);
+           System.out.println("dU="+dU.get(i)+"   numgrad="+grad);
+           diff+= graddiff*graddiff;
+           U.set(i,t);
+         }
+         for(int i = 0; i< b1.getNumElements();i++){
+           t = b1.get(i);
+           b1.set(i,t+eps);
+           J_plus = forwardProp(y);
+           b1.set(i,t-eps);
+           J_minus = forwardProp(y);
+           grad = (J_plus - J_minus)/(2*eps);
+           graddiff = Math.abs(db1.get(i)-grad);
+           diff+= graddiff*graddiff;
+           b1.set(i,t);
+         }
+          for(int i =0;i<b2.getNumElements();i++) {
+           t = b2.get(i);
+           b2.set(i,t+eps);
+           J_plus = forwardProp(y);
+           b2.set(i,t-eps);
+           J_minus = forwardProp(y);
+           grad = (J_plus - J_minus)/(2*eps);
+           graddiff = Math.abs(db2.get(i)-grad);
+           diff+= graddiff*graddiff;
+           b2.set(i,t);
+         }
+           System.out.println("diff="+diff);
+           if(diff>1e-7) System.out.println("fail gradient check");
+           
+        }
 
 	private SimpleMatrix extractL(List<Datum> Data,int count,int[] num) {
 		SimpleMatrix ans=new SimpleMatrix(50*windowSize,1);
@@ -120,7 +202,13 @@ public class WindowModel {
 				}
 				//calculate gradients
 				BackPropagation(delta2,delta1,a);
-				//update
+				
+                                //gradient check
+                                if(step==0&&count<=10) doGradCheck(y);
+                                //regularize
+                                dU = dU.plus(U.scale(lamda));
+                                dW = dW.plus(W.scale(lamda));
+                                //update
 				U=U.minus(dU.scale(learningRate));
 				b2=b2.minus(db2.scale(learningRate));
 				W=W.minus(dW.scale(learningRate));
@@ -141,9 +229,9 @@ public class WindowModel {
 
 	
 	private void BackPropagation(SimpleMatrix delta2, SimpleMatrix delta1, SimpleMatrix a) {
-		dU=delta2.mult(a.transpose()).plus(U.scale(lamda));
+		dU=delta2.mult(a.transpose());
 		db2=new SimpleMatrix(delta2);
-		dW=delta1.mult(L.transpose()).plus(W.scale(lamda));
+		dW=delta1.mult(L.transpose());
 		db1=new SimpleMatrix(delta1);
 		dL=W.transpose().mult(delta1);
 	}
