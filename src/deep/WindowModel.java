@@ -81,7 +81,7 @@ public class WindowModel {
             J_minus = forwardProp(y);
             grad = (J_plus-J_minus) /(2*eps);
             graddiff = Math.abs(dW.get(i)-grad);
-            System.out.println("dW="+dW.get(i)+"  numgrad="+grad);
+           // System.out.println("dW="+dW.get(i)+"  numgrad="+grad);
             diff += graddiff*graddiff;
             W.set(i,t);
          } 
@@ -93,7 +93,7 @@ public class WindowModel {
            J_minus = forwardProp(y);
            grad = (J_plus - J_minus)/(2*eps);
            graddiff = Math.abs(dU.get(i) -grad);
-           System.out.println("dU="+dU.get(i)+"   numgrad="+grad);
+           //System.out.println("dU="+dU.get(i)+"   numgrad="+grad);
            diff+= graddiff*graddiff;
            U.set(i,t);
          }
