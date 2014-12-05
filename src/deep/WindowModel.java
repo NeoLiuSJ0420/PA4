@@ -17,7 +17,7 @@ public class WindowModel {
 	public int windowSize,wordSize, hiddenSize;
 	public double learningRate;
 	public double lamda=0.0001;
-	public int epoch=15;
+	public int epoch=20;
 	public String[] cat={"O","LOC","MISC","ORG","PER"};
 	public String[] days={"Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday","January","February","March","April","May","June","July","August","September","October","November","December"};
 	public HashSet<String> specialStrings;
@@ -41,22 +41,22 @@ public class WindowModel {
 		U=SimpleMatrix.random(5,hiddenSize,(-1)*init,init, new Random());
 		b2=new SimpleMatrix(5,1);
 	}
-        public double forwardProp(SimpleMatrix y) {
-           SimpleMatrix z=W.mult(L).plus(b1);//z,h*1
+    public double feedForward(SimpleMatrix y) {
+       SimpleMatrix z=W.mult(L).plus(b1);//z,h*1
 	   SimpleMatrix a=new SimpleMatrix(z);//a,h*1
 	   for (int i=0;i<hiddenSize;i++)
-		a.set(i,0,Math.tanh(a.get(i,0)));
+		   a.set(i,0,Math.tanh(a.get(i,0)));
 	   SimpleMatrix q=U.mult(a).plus(b2);//q,5*1
 	   double sum=0;
 	   for (int i=0;i<5;i++) sum+=Math.exp(q.get(i,0));
-	   SimpleMatrix p=new SimpleMatrix(5,1);//p,5*1
+	       SimpleMatrix p=new SimpleMatrix(5,1);//p,5*1
            for (int i=0;i<5;i++) p.set(i,0,Math.exp(q.get(i,0))/sum);
            double J = 0;
            for(int i=0;i<5;i++) J+=Math.log(p.get(i,0)) * y.get(i,0);
            J = J*-1;
            return J;
-       }
-        public void doGradCheck(SimpleMatrix y){
+    }
+       public void doGradCheck(SimpleMatrix y){
           double eps = 1e-4;
           double diff = 0.0;
           double t;
@@ -64,9 +64,9 @@ public class WindowModel {
           for(int i = 0; i<L.getNumElements(); i++){
             t = L.get(i);
             L.set(i,t+eps);
-            J_plus = forwardProp(y);
+            J_plus = feedForward(y);
             L.set(i,t-eps);
-            J_minus = forwardProp(y);
+            J_minus = feedForward(y);
             grad = (J_plus-J_minus) / (2*eps);
             graddiff = Math.abs(dL.get(i) - grad);
            // System.out.println("dL="+dL.get(i)+"  numgrad="+grad);
@@ -76,9 +76,9 @@ public class WindowModel {
           for(int i = 0; i< W.getNumElements();i++){
             t = W.get(i);
             W.set(i,t+eps);
-            J_plus = forwardProp(y);
+            J_plus = feedForward(y);
             W.set(i,t-eps);
-            J_minus = forwardProp(y);
+            J_minus = feedForward(y);
             grad = (J_plus-J_minus) /(2*eps);
             graddiff = Math.abs(dW.get(i)-grad);
            // System.out.println("dW="+dW.get(i)+"  numgrad="+grad);
@@ -88,9 +88,9 @@ public class WindowModel {
          for(int i = 0; i < U.getNumElements();i++){
            t = U.get(i);
            U.set(i,t+eps);
-           J_plus = forwardProp(y);
+           J_plus = feedForward(y);
            U.set(i,t-eps);
-           J_minus = forwardProp(y);
+           J_minus = feedForward(y);
            grad = (J_plus - J_minus)/(2*eps);
            graddiff = Math.abs(dU.get(i) -grad);
            //System.out.println("dU="+dU.get(i)+"   numgrad="+grad);
@@ -100,9 +100,9 @@ public class WindowModel {
          for(int i = 0; i< b1.getNumElements();i++){
            t = b1.get(i);
            b1.set(i,t+eps);
-           J_plus = forwardProp(y);
+           J_plus = feedForward(y);
            b1.set(i,t-eps);
-           J_minus = forwardProp(y);
+           J_minus = feedForward(y);
            grad = (J_plus - J_minus)/(2*eps);
            graddiff = Math.abs(db1.get(i)-grad);
            diff+= graddiff*graddiff;
@@ -111,15 +111,15 @@ public class WindowModel {
           for(int i =0;i<b2.getNumElements();i++) {
            t = b2.get(i);
            b2.set(i,t+eps);
-           J_plus = forwardProp(y);
+           J_plus = feedForward(y);
            b2.set(i,t-eps);
-           J_minus = forwardProp(y);
+           J_minus = feedForward(y);
            grad = (J_plus - J_minus)/(2*eps);
            graddiff = Math.abs(db2.get(i)-grad);
            diff+= graddiff*graddiff;
            b2.set(i,t);
          }
-           System.out.println("diff="+diff);
+           //System.out.println("diff="+diff);
            if(diff>1e-7) System.out.println("fail gradient check");
            
         }
@@ -158,11 +158,12 @@ public class WindowModel {
 		return 0;
 	}
 	/**
-	 * Simplest SGD training 
+	 * SGD training 
 	 */
 	public void train(List<Datum> data ){
 		int[] label=new int[data.size()];
 		double score;
+		double j;
 		for (int step=0;step<epoch;step++) {
 			long seed = System.nanoTime();
 			Collections.shuffle(data, new Random(seed));
@@ -173,7 +174,8 @@ public class WindowModel {
 				if (data.get(i).label.equals("ORG")) label[i]=3;
 				if (data.get(i).label.equals("PER")) label[i]=4;
 			}
-			System.out.println(step);
+			score=0;
+			j=Math.pow(W.normF(),2)+Math.pow(U.normF(),2);
 			for (int count=0;count<data.size();count++) {
 				String word=data.get(count).word.toLowerCase();
 				SimpleMatrix y=new SimpleMatrix(5,1);//y,5*1
@@ -190,25 +192,28 @@ public class WindowModel {
 				for (int i=0;i<5;i++) sum+=Math.exp(q.get(i,0));
 				SimpleMatrix p=new SimpleMatrix(5,1);//p,5*1
 				for (int i=0;i<5;i++) p.set(i,0,Math.exp(q.get(i,0))/sum);
+				score+=Math.log(p.get(label[count],0));
 				
 				//delta2 and delta1
 				SimpleMatrix delta2=p.minus(y);//delta2,5*1
 				SimpleMatrix delta1=new SimpleMatrix(hiddenSize,1);//delta1,h*1
 				for (int i=0;i<hiddenSize;i++) {
 					double temp=0;
-					for (int j=0;j<5;j++) 
-						temp+=delta2.get(j)*U.get(j,i)*(1-Math.pow(a.get(i), 2));
+					for (int k=0;k<5;k++) 
+						temp+=delta2.get(k)*U.get(k,i)*(1-Math.pow(a.get(i), 2));
 					delta1.set(i,0,temp);
 				}
 				//calculate gradients
 				BackPropagation(delta2,delta1,a);
 				
-                                //gradient check
-                                if(step==0&&count<=10) doGradCheck(y);
-                                //regularize
-                                dU = dU.plus(U.scale(lamda));
-                                dW = dW.plus(W.scale(lamda));
-                                //update
+
+				//if(step==0&&count<=10) doGradCheck(y);
+
+				//regularize
+                           
+                dU = dU.plus(U.scale(lamda));
+                dW = dW.plus(W.scale(lamda));
+                //update
 				U=U.minus(dU.scale(learningRate));
 				b2=b2.minus(db2.scale(learningRate));
 				W=W.minus(dW.scale(learningRate));
@@ -219,8 +224,9 @@ public class WindowModel {
 					NER.allVecs.set(row,col,NER.allVecs.get(row,col)-learningRate*dL.get(i,0));
 				}
 			}//finish 1 iter of SGD
-	
-			
+			score=score*(-1)/data.size();
+			j=j*lamda/(2*data.size())+score;
+			System.out.println(j);
 		}
 			
 			
@@ -276,6 +282,7 @@ public class WindowModel {
 			}
 			if (word.equals(originalword))
 				category=0;
+			//handle cases
 			if ((category==0)&&(originalword.length()>1)&&(Character.isUpperCase(originalword.charAt(0)))&&(!Character.isUpperCase(originalword.charAt(1)))) {
 				if ((!Character.isLetter(testData.get(count-1).word.charAt(0)))&&(!Character.isDigit(testData.get(count-1).word.charAt(0))))
 					continue;
