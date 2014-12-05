@@ -55,7 +55,7 @@ public class Baseline {
 			else sb.append(String.format("%s	%s	%s\n",d.word,d.label,"O"));
 			
 		}
-		PrintWriter writer = new PrintWriter("baseline.out", "UTF-8");
+		PrintWriter writer = new PrintWriter("test_baseline.out", "UTF-8");
 		writer.print(sb);
 		writer.close();
 
