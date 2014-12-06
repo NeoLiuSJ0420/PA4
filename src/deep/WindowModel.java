@@ -119,6 +119,7 @@ public class WindowModel {
            diff+= graddiff*graddiff;
            b2.set(i,t);
          }
+           diff = Math.sqrt(diff);
            //System.out.println("diff="+diff);
            if(diff>1e-7) System.out.println("fail gradient check");
            
